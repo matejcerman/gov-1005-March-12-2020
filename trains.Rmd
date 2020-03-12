@@ -21,6 +21,8 @@ library(tidyverse)
 # Forgetting ungroup() is one of the biggest causes of bugs in this sort of
 # code.
 
+train <- train
+
 train %>% 
   filter(treatment == "Treated") %>% 
   rep_sample_n(size = 51, replace = TRUE, reps = 1000) %>% 
@@ -65,6 +67,16 @@ train %>%
 
 1) Now that we know the difference in mean income between treated and control in this sample, we want to get a confidence interval for that difference. If we had sampled commuters other than the ones that we did sample, the difference would be different. How different might it be? Are these results consistent with the claim, made in the article, that treatment was randomly assigned?
 
+```{r}
+train %>% 
+  rep_sample_n(size = 115, replace = TRUE, reps = 1000) %>% 
+  group_by(replicate, treatment) %>%
+  summarise(avg_inc = mean(income)) %>%
+  pivot_wider(names_from = treatment, values_from = avg_inc) %>% 
+  mutate(Difference = Treated - Control) %>%
+  pull(Difference) %>%
+  quantile(c(0.025, 0.975))
+```
 
 
 
@@ -74,14 +86,32 @@ train %>%
 
 3) What is the difference in att_chg between the Treated and Control?
 
+```{r}
+chg <- train %>%
+  group_by(treatment) %>%
+  summarise(mean_change = mean(att_chg)) %>%
+  pivot_wider(names_from = treatment, values_from = mean_change) %>%
+  mutate(diff = Treated - Control)
+```
 
 
 4) What is a 99% confidence intervals for that difference?
 
+```{r}
+ conf_chg <- train %>% 
+  rep_sample_n(size = 115, replace = TRUE, reps = 1000) %>%
+  group_by(replicate, treatment) %>%
+  summarise(mean_change = mean(att_chg)) %>%
+  pivot_wider(names_from = treatment, values_from = mean_change) %>%
+  mutate(dif = Treated - Control) %>%
+  pull(dif) %>%
+  quantile(c(0.005, 0.995))
+```
+
+
 
 
 5) How do you describe that confidence interval? How would a "frequentist" describe that interval?
-
 
 
 6) Are these results consistent or inconsistent with Enos (2014)?
@@ -89,6 +119,10 @@ train %>%
 
 7) If all of the above is easy, try to replicate Figure 2 from the article, but using the overall measure of att_chg in place of the question-specific results shown there.
 
+```{r}
+plot_data <- tibble(chg[1], chg[2], chg[3],conf_chg[1],conf_chg[2],
+                    )
+```
 
 
 
